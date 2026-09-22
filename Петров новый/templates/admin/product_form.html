@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Новый товар' if mode == 'new' else 'Редактирование' }} — Админ{% endblock %}
+
+{% block content %}
+<div class="container section">
+    <h1 class="page-title">
+        {{ '➕ Новый товар' if mode == 'new' else '✏️ Редактирование товара' }}
+    </h1>
+
+    <form method="post" class="admin-form">
+        <div class="form-group">
+            <label>Название *</label>
+            <input type="text" name="name" required value="{{ toy.name or '' }}">
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Цена, ₽ *</label>
+                <input type="number" name="price" min="0" required value="{{ toy.price or '' }}">
+            </div>
+            <div class="form-group">
+                <label>Рейтинг (0–5)</label>
+                <input type="number" name="rating" step="0.1" min="0" max="5"
+                       value="{{ toy.rating or '5.0' }}">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Категория *</label>
+                <input type="text" name="category" required value="{{ toy.category or '' }}"
+                       placeholder="Мягкие игрушки">
+            </div>
+            <div class="form-group">
+                <label>Возраст</label>
+                <input type="text" name="age" value="{{ toy.age or '' }}" placeholder="3+">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Ссылка на изображение</label>
+            <input type="url" name="image" value="{{ toy.image or '' }}"
+                   placeholder="https://...">
+        </div>
+
+        <div class="form-group">
+            <label>Описание</label>
+            <textarea name="description" rows="4">{{ toy.description or '' }}</textarea>
+        </div>
+
+        <div class="checkout-actions">
+            <a href="{{ url_for('admin_products') }}" class="btn btn--outline">← Назад</a>
+            <button type="submit" class="btn btn--primary btn--lg">
+                {{ 'Добавить' if mode == 'new' else 'Сохранить' }}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

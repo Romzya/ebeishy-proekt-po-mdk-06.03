@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Заказ #{{ order.id }} — Админ{% endblock %}
+
+{% block content %}
+<div class="container section">
+    <a href="{{ url_for('admin_orders') }}" class="btn btn--outline btn--sm">← К списку заказов</a>
+    <h1 class="page-title" style="margin-top:16px;">📦 Заказ #{{ order.id }}</h1>
+
+    <div class="order-detail">
+        <div class="order-detail__info">
+            <h3>Информация о клиенте</h3>
+            <p><b>ФИО:</b> {{ order.full_name }}</p>
+            <p><b>Телефон:</b> {{ order.phone }}</p>
+            <p><b>Адрес:</b> {{ order.address }}</p>
+            <p><b>Карта:</b> {{ order.card_masked }}</p>
+            <p><b>Дата заказа:</b> {{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+            <p><b>Статус:</b> <span class="status status--{{ order.status|lower }}">{{ order.status }}</span></p>
+
+            {% if order.cancel_reason %}
+                <p><b>Причина отмены:</b> {{ order.cancel_reason }}</p>
+            {% endif %}
+
+            <form action="{{ url_for('admin_order_status', order_id=order.id) }}" method="post"
+                  class="order-detail__status">
+                <label>Изменить статус:</label>
+                <select name="status">
+                    {% for s in statuses %}
+                        <option value="{{ s }}" {{ 'selected' if order.status == s else '' }}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn--primary btn--sm">Обновить</button>
+            </form>
+        </div>
+
+        <div class="order-detail__items">
+            <h3>Состав заказа</h3>
+            <ul>
+                {% for item in order.items %}
+                    <li>
+                        <span>{{ item.toy_name }} × {{ item.quantity }}</span>
+                        <span>{{ item.subtotal }} ₽</span>
+                    </li>
+                {% endfor %}
+            </ul>
+            <div class="order-detail__total">
+                <span>Итого:</span>
+                <span>{{ order.total }} ₽</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

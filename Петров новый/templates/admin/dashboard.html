@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Админ-панель — Мир Игрушек{% endblock %}
+
+{% block content %}
+<div class="container section">
+    <h1 class="page-title">⚙️ Админ-панель</h1>
+
+    <div class="admin-nav">
+        <a href="{{ url_for('admin_dashboard') }}" class="admin-nav__link active">📊 Дашборд</a>
+        <a href="{{ url_for('admin_products') }}" class="admin-nav__link">🧸 Товары</a>
+        <a href="{{ url_for('admin_orders') }}" class="admin-nav__link">📦 Заказы</a>
+        <a href="{{ url_for('admin_logout') }}" class="admin-nav__link admin-nav__link--danger">🚪 Выйти</a>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-card__icon">🧸</div>
+            <div class="stat-card__value">{{ stats.toys_count }}</div>
+            <div class="stat-card__label">Всего товаров</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__icon">📦</div>
+            <div class="stat-card__value">{{ stats.orders_count }}</div>
+            <div class="stat-card__label">Заказов оформлено</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__icon">💰</div>
+            <div class="stat-card__value">{{ stats.total_value }} ₽</div>
+            <div class="stat-card__label">Стоимость склада</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__icon">📈</div>
+            <div class="stat-card__value">{{ stats.orders_sum }} ₽</div>
+            <div class="stat-card__label">Сумма заказов</div>
+        </div>
+    </div>
+
+    <h2 class="section__title" style="text-align:left;">Последние заказы</h2>
+
+    {% if recent_orders %}
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Дата</th>
+                    <th>Клиент</th>
+                    <th>Телефон</th>
+                    <th>Сумма</th>
+                    <th>Статус</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for o in recent_orders %}
+                    <tr>
+                        <td><b>#{{ o.id }}</b></td>
+                        <td>{{ o.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                        <td>{{ o.full_name }}</td>
+                        <td>{{ o.phone }}</td>
+                        <td><b>{{ o.total }} ₽</b></td>
+                        <td><span class="status status--{{ o.status|lower }}">{{ o.status }}</span></td>
+                        <td><a href="{{ url_for('admin_order_detail', order_id=o.id) }}" class="btn btn--sm btn--outline">Открыть</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">
+            <div class="empty__icon">📦</div>
+            <p>Заказов пока нет</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

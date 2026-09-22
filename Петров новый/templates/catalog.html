@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Каталог — Мир Игрушек{% endblock %}
+
+{% block content %}
+<div class="container section">
+    <h1 class="page-title">Каталог игрушек</h1>
+
+    <div class="catalog-layout">
+        <aside class="filters">
+            <h3>Категории</h3>
+            <ul class="filters__list">
+                <li>
+                    <a href="{{ url_for('catalog', search=search, sort=sort) }}"
+                       class="{{ 'active' if not current_category else '' }}">Все категории</a>
+                </li>
+                {% for cat in categories %}
+                    <li>
+                        <a href="{{ url_for('catalog', category=cat, search=search, sort=sort) }}"
+                           class="{{ 'active' if current_category == cat else '' }}">{{ cat }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <h3>Сортировка</h3>
+            <ul class="filters__list">
+                <li><a href="{{ url_for('catalog', category=current_category, search=search, sort='price_asc') }}"
+                       class="{{ 'active' if sort == 'price_asc' else '' }}">Сначала дешёвые</a></li>
+                <li><a href="{{ url_for('catalog', category=current_category, search=search, sort='price_desc') }}"
+                       class="{{ 'active' if sort == 'price_desc' else '' }}">Сначала дорогие</a></li>
+                <li><a href="{{ url_for('catalog', category=current_category, search=search, sort='rating') }}"
+                       class="{{ 'active' if sort == 'rating' else '' }}">По рейтингу</a></li>
+            </ul>
+        </aside>
+
+        <div class="catalog-content">
+            {% if search %}
+                <p class="search-info">Результаты поиска по запросу «{{ search }}» — найдено {{ toys|length }}</p>
+            {% endif %}
+
+            {% if toys %}
+                <div class="products">
+                    {% for toy in toys %}
+                        <div class="product-card">
+                            <a href="{{ url_for('product', toy_id=toy.id) }}" class="product-card__image">
+                                <img src="{{ toy.image }}" alt="{{ toy.name }}" loading="lazy">
+                            </a>
+                            <div class="product-card__body">
+                                <span class="product-card__category">{{ toy.category }}</span>
+                                <h3 class="product-card__title">
+                                    <a href="{{ url_for('product', toy_id=toy.id) }}">{{ toy.name }}</a>
+                                </h3>
+                                <div class="product-card__meta">
+                                    <span>⭐ {{ toy.rating }}</span>
+                                    <span>Возраст: {{ toy.age }}</span>
+                                </div>
+                                <div class="product-card__footer">
+                                    <span class="product-card__price">{{ toy.price }} ₽</span>
+                                    <form action="{{ url_for('add_to_cart', toy_id=toy.id) }}" method="post" class="add-form">
+                                        <button type="submit" class="btn btn--primary btn--sm">В корзину</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty">
+                    <div class="empty__icon">🔍</div>
+                    <p>Игрушки не найдены. Попробуйте изменить фильтры.</p>
+                    <a href="{{ url_for('catalog') }}" class="btn btn--primary">Сбросить фильтры</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
