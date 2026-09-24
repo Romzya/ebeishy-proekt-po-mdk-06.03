@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Оформление заказа — Мир Игрушек{% endblock %}
+
+{% block content %}
+<div class="container section">
+    <h1 class="page-title">📦 Оформление заказа</h1>
+
+    <div class="flash flash--success" style="margin-bottom:16px;">
+        💡 Регистрация не нужна — просто заполните данные ниже. После оформления вы получите ссылку для просмотра и управления заказом.
+    </div>
+
+    <div class="checkout-layout">
+        <form method="post" class="checkout-form" id="checkout-form" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <section class="form-section">
+                <h3 class="form-section__title">👤 Контактные данные</h3>
+
+                <div class="form-group">
+                    <label for="full_name">Имя и фамилия *</label>
+                    <input type="text" id="full_name" name="full_name" required
+                           placeholder="Иванов Иван"
+                           value="{{ form.full_name or '' }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Телефон *</label>
+                    <input type="tel" id="phone" name="phone" required
+                           placeholder="+7 (999) 123-45-67"
+                           value="{{ form.phone or '' }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="address">Адрес доставки *</label>
+                    <textarea id="address" name="address" rows="3" required
+                              placeholder="г. Ижевск, ул. Примерная, д. 1, кв. 1">{{ form.address or '' }}</textarea>
+                </div>
+            </section>
+
+            <section class="form-section">
+                <h3 class="form-section__title">💳 Способ оплаты</h3>
+
+                {% for key, label in payment_methods.items() %}
+                    <label class="payment-option">
+                        <input type="radio" name="payment_method" value="{{ key }}"
+                               {{ 'checked' if (form.payment_method == key) or (not form.payment_method and loop.first) else '' }}>
+                        <span>{{ label }}</span>
+                    </label>
+                {% endfor %}
+
+                <p class="form-hint">
+                    🔒 Онлайн-оплата (демо) не передаёт данные карты на наш сервер —
+                    в реальном магазине здесь будет редирект на защищённую страницу платёжного провайдера.
+                </p>
+            </section>
+
+            <div class="checkout-actions">
+                <a href="{{ url_for('cart') }}" class="btn btn--outline">← Назад в корзину</a>
+                <button type="submit" class="btn btn--primary btn--lg">
+                    Подтвердить заказ на {{ total }} ₽
+                </button>
+            </div>
+        </form>
+
+        <aside class="checkout-summary">
+            <h3>Ваш заказ</h3>
+            <ul class="checkout-summary__list">
+                {% for item in items %}
+                    <li>
+                        <span>{{ item.toy.name }} × {{ item.quantity }}</span>
+                        <span>{{ item.subtotal }} ₽</span>
+                    </li>
+                {% endfor %}
+            </ul>
+            <div class="checkout-summary__row">
+                <span>Доставка</span>
+                <span>Бесплатно</span>
+            </div>
+            <div class="checkout-summary__total">
+                <span>Итого:</span>
+                <span>{{ total }} ₽</span>
+            </div>
+            <p class="checkout-summary__address">
+                📍 Самовывоз: {{ shop_address }}
+            </p>
+        </aside>
+    </div>
+</div>
+{% endblock %}
