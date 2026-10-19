@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Ошибка сервера{% endblock %}
+{% block content %}
+<div class="container section">
+    <div class="empty">
+        <div class="empty__icon">😿</div>
+        <h1>500 — Ошибка сервера</h1>
+        <p>Что-то пошло не так. Мы уже работаем над этим.</p>
+        <a href="{{ url_for('index') }}" class="btn btn--primary btn--lg">На главную</a>
+    </div>
+</div>
+{% endblock %}

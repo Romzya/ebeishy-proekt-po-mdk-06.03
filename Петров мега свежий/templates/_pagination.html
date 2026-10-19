@@ -1,0 +1,49 @@
+{% macro render_pagination(pagination, endpoint, extra_args={}) %}
+{% if pagination.pages > 1 %}
+<nav class="pagination" aria-label="Постраничная навигация">
+    {% set args = extra_args.copy() %}
+
+    {# Предыдущая #}
+    {% if pagination.has_prev %}
+        {% set _ = args.update({'page': pagination.prev_num}) %}
+        <a href="{{ url_for(endpoint, **args) }}" class="pagination__link">← Назад</a>
+    {% else %}
+        <span class="pagination__link pagination__link--disabled">← Назад</span>
+    {% endif %}
+
+    {# Номера страниц (окно вокруг текущей) #}
+    {% set window = 2 %}
+    {% set start = [1, pagination.page - window]|max %}
+    {% set end = [pagination.pages, pagination.page + window]|min %}
+
+    {% if start > 1 %}
+        {% set _ = args.update({'page': 1}) %}
+        <a href="{{ url_for(endpoint, **args) }}" class="pagination__link">1</a>
+        {% if start > 2 %}<span class="pagination__dots">…</span>{% endif %}
+    {% endif %}
+
+    {% for p in range(start, end + 1) %}
+        {% set _ = args.update({'page': p}) %}
+        <a href="{{ url_for(endpoint, **args) }}"
+           class="pagination__link {{ 'pagination__link--active' if p == pagination.page else '' }}">{{ p }}</a>
+    {% endfor %}
+
+    {% if end < pagination.pages %}
+        {% if end < pagination.pages - 1 %}<span class="pagination__dots">…</span>{% endif %}
+        {% set _ = args.update({'page': pagination.pages}) %}
+        <a href="{{ url_for(endpoint, **args) }}" class="pagination__link">{{ pagination.pages }}</a>
+    {% endif %}
+
+    {# Следующая #}
+    {% if pagination.has_next %}
+        {% set _ = args.update({'page': pagination.next_num}) %}
+        <a href="{{ url_for(endpoint, **args) }}" class="pagination__link">Вперёд →</a>
+    {% else %}
+        <span class="pagination__link pagination__link--disabled">Вперёд →</span>
+    {% endif %}
+</nav>
+<p class="pagination__info">
+    Страница {{ pagination.page }} из {{ pagination.pages }} · всего {{ pagination.total }}
+</p>
+{% endif %}
+{% endmacro %}

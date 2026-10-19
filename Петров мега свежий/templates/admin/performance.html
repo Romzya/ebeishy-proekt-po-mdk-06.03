@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% block title %}Производительность — Админ{% endblock %}
+
+{% block content %}
+<div class="container section">
+    <h1 class="page-title">⚡ Производительность маршрутов</h1>
+
+    <div class="admin-nav">
+        <a href="{{ url_for('admin_dashboard') }}" class="admin-nav__link">📊 Дашборд</a>
+        <a href="{{ url_for('admin_products') }}" class="admin-nav__link">🧸 Товары</a>
+        <a href="{{ url_for('admin_orders') }}" class="admin-nav__link">📦 Заказы</a>
+        <a href="{{ url_for('admin_performance') }}" class="admin-nav__link active">⚡ Производительность</a>
+        <form action="{{ url_for('admin_logout') }}" method="post" class="admin-logout-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="admin-nav__link admin-nav__link--danger">🚪 Выйти</button>
+        </form>
+    </div>
+
+    <div class="perf-toolbar">
+        <span class="perf-status" id="perf-status">🟢 Live · обновление каждые 3 с</span>
+        <button type="button" class="btn btn--outline btn--sm" id="perf-refresh">🔄 Обновить сейчас</button>
+        <button type="button" class="btn btn--danger btn--sm" id="perf-reset">🗑️ Сбросить статистику</button>
+    </div>
+
+    <div class="stats-grid" id="perf-summary">
+        <div class="stat-card">
+            <div class="stat-card__icon">🔗</div>
+            <div class="stat-card__value" id="sum-endpoints">—</div>
+            <div class="stat-card__label">Маршрутов</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__icon">📈</div>
+            <div class="stat-card__value" id="sum-requests">—</div>
+            <div class="stat-card__label">Всего запросов</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__icon">⏱️</div>
+            <div class="stat-card__value" id="sum-avg">—</div>
+            <div class="stat-card__label">Средний отклик</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__icon">🐢</div>
+            <div class="stat-card__value" id="sum-slowest">—</div>
+            <div class="stat-card__label">Самый медленный</div>
+        </div>
+    </div>
+
+    <h2 class="section__title" style="text-align:left; font-size:1.3rem;">Отклик по маршрутам</h2>
+    <div class="perf-table-wrap">
+        <table class="admin-table" id="perf-routes-table">
+            <thead>
+                <tr>
+                    <th>Маршрут</th>
+                    <th>Метод</th>
+                    <th>Запросов</th>
+                    <th>Средний, мс</th>
+                    <th>Мин, мс</th>
+                    <th>Макс, мс</th>
+                    <th>Последний, мс</th>
+                    <th>Статус</th>
+                    <th>Ошибки 5xx</th>
+                    <th>Обновлён</th>
+                </tr>
+            </thead>
+            <tbody id="perf-routes-body">
+                <tr><td colspan="10" class="muted" style="text-align:center;">Загрузка…</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h2 class="section__title" style="text-align:left; font-size:1.3rem; margin-top:32px;">Последние запросы</h2>
+    <div class="perf-table-wrap">
+        <table class="admin-table" id="perf-recent-table">
+            <thead>
+                <tr>
+                    <th>Время</th>
+                    <th>Метод</th>
+                    <th>Путь</th>
+                    <th>Endpoint</th>
+                    <th>Статус</th>
+                    <th>Отклик, мс</th>
+                </tr>
+            </thead>
+            <tbody id="perf-recent-body">
+                <tr><td colspan="6" class="muted" style="text-align:center;">Загрузка…</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+(function () {
+    const routesBody = document.getElementById('perf-routes-body');
+    const recentBody = document.getElementById('perf-recent-body');
+    const statusEl   = document.getElementById('perf-status');
+    const csrfMeta   = document.querySelector('meta[name="csrf-token"]');
+    const csrfToken  = csrfMeta ? csrfMeta.content : '';
+
+    function msClass(ms) {
+        if (ms < 100) return 'perf-ms perf-ms--fast';
+        if (ms < 200) return 'perf-ms perf-ms--mid';
+        return 'perf-ms perf-ms--slow';
+    }
+
+    function statusClass(code) {
+        if (code >= 500) return 'perf-status-badge perf-status-badge--err';
+        if (code >= 400) return 'perf-status-badge perf-status-badge--warn';
+        return 'perf-status-badge perf-status-badge--ok';
+    }
+
+    function escapeHtml(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    async function refresh() {
+        try {
+            const r = await fetch('/admin/api/route-metrics', {
+                credentials: 'same-origin',
+                cache: 'no-store',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const data = await r.json();
+
+            document.getElementById('sum-endpoints').textContent = data.summary.endpoints;
+            document.getElementById('sum-requests').textContent  = data.summary.total_requests;
+            document.getElementById('sum-avg').textContent       = data.summary.avg_ms + ' мс';
+            document.getElementById('sum-slowest').textContent   =
+                data.summary.slowest_endpoint +
+                (data.summary.slowest_avg_ms ? ' · ' + data.summary.slowest_avg_ms + ' мс' : '');
+
+            if (!data.routes.length) {
+                routesBody.innerHTML =
+                    '<tr><td colspan="10" class="muted" style="text-align:center;">Пока нет данных — открой любую страницу сайта.</td></tr>';
+            } else {
+                routesBody.innerHTML = data.routes.map(m => `
+                    <tr>
+                        <td><code>${escapeHtml(m.path_rule)}</code><br>
+                            <span class="muted" style="font-size:.8rem;">${escapeHtml(m.endpoint)}</span></td>
+                        <td><span class="perf-method">${escapeHtml(m.method)}</span></td>
+                        <td><b>${m.count}</b></td>
+                        <td><span class="${msClass(m.avg_ms)}">${m.avg_ms}</span></td>
+                        <td>${m.min_ms}</td>
+                        <td>${m.max_ms}</td>
+                        <td><span class="${msClass(m.last_ms)}">${m.last_ms}</span></td>
+                        <td><span class="${statusClass(m.last_status)}">${m.last_status}</span></td>
+                        <td>${m.errors > 0 ? '<b style="color:#d63031;">' + m.errors + '</b>' : '0'}</td>
+                        <td class="muted" style="font-size:.85rem;">${escapeHtml(m.last_called_at)}</td>
+                    </tr>
+                `).join('');
+            }
+
+            if (!data.recent.length) {
+                recentBody.innerHTML =
+                    '<tr><td colspan="6" class="muted" style="text-align:center;">Пока нет запросов.</td></tr>';
+            } else {
+                recentBody.innerHTML = data.recent.map(l => `
+                    <tr>
+                        <td class="muted">${escapeHtml(l.time)}</td>
+                        <td><span class="perf-method">${escapeHtml(l.method)}</span></td>
+                        <td><code>${escapeHtml(l.path)}</code></td>
+                        <td class="muted" style="font-size:.85rem;">${escapeHtml(l.endpoint)}</td>
+                        <td><span class="${statusClass(l.status)}">${l.status}</span></td>
+                        <td><span class="${msClass(l.duration_ms)}">${l.duration_ms}</span></td>
+                    </tr>
+                `).join('');
+            }
+
+            statusEl.textContent = '🟢 Live · обновлено ' + new Date().toLocaleTimeString();
+            statusEl.classList.remove('perf-status--err');
+        } catch (e) {
+            console.error('[perf] refresh error', e);
+            statusEl.textContent = '🔴 Ошибка обновления';
+            statusEl.classList.add('perf-status--err');
+        }
+    }
+
+    document.getElementById('perf-refresh').addEventListener('click', refresh);
+
+    document.getElementById('perf-reset').addEventListener('click', async function () {
+        if (!confirm('Сбросить всю статистику производительности?')) return;
+        try {
+            const r = await fetch('/admin/api/route-metrics/reset', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            await refresh();
+        } catch (e) {
+            alert('Не удалось сбросить статистику: ' + e.message);
+        }
+    });
+
+    refresh();
+    setInterval(refresh, 3000);
+})();
+</script>
+{% endblock %}

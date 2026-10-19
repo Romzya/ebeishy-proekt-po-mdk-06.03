@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Мои заказы — Мир Игрушек{% endblock %}
+
+{% block content %}
+<div class="container section">
+    <h1 class="page-title">📦 Мои заказы</h1>
+
+    {% if orders %}
+        <p class="muted" style="margin-bottom:20px;">
+            Здесь показаны заказы, оформленные в этом браузере. Чтобы вернуться к заказу с другого устройства — используйте прямую ссылку из письма/сообщения после оформления.
+        </p>
+
+        <div class="orders-list">
+            {% for o in orders %}
+                <a href="{{ url_for('order_view', token=o.token) }}" class="order-item">
+                    <div>
+                        <b>Заказ #{{ o.id }}</b>
+                        <p class="muted">{{ o.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                        <p class="muted" style="font-size:.85rem;">{{ o.full_name }} · {{ o.phone }}</p>
+                    </div>
+                    <div>
+                        <span class="status status--{{ o.status|lower }}">{{ o.status }}</span>
+                    </div>
+                    <div class="order-item__total">{{ o.total }} ₽</div>
+                    <div class="order-item__arrow">→</div>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty">
+            <div class="empty__icon">📦</div>
+            <p>Здесь пока нет заказов</p>
+            <p class="muted" style="font-size:.9rem; margin-top:8px;">
+                Оформите первый заказ — он появится здесь автоматически.
+            </p>
+            <a href="{{ url_for('catalog') }}" class="btn btn--primary btn--lg">Перейти в каталог</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

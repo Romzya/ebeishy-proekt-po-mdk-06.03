@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}Мир Игрушек{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="topbar">
+        <div class="container topbar__inner">
+            <span class="topbar__item">📍 {{ shop_address }}</span>
+            <span class="topbar__item">📞 {{ shop_phone }}</span>
+            <span class="topbar__item">🕒 Пн-Вс: 9:00 — 21:00</span>
+        </div>
+    </div>
+
+    <header class="header">
+        <div class="container header__inner">
+            <a href="{{ url_for('index') }}" class="logo">
+                <span class="logo__icon">🧸</span>
+                <span class="logo__text">Мир Игрушек</span>
+            </a>
+
+            <form action="{{ url_for('catalog') }}" method="get" class="search">
+                <input type="text" name="search" placeholder="Найти игрушку..." value="{{ request.args.get('search', '') }}">
+                <button type="submit">🔍</button>
+            </form>
+
+            <nav class="nav">
+                <a href="{{ url_for('catalog') }}" class="nav__link">Каталог</a>
+
+                <a href="{{ url_for('my_orders') }}" class="nav__link my-orders-link">
+                    📦 Мои заказы
+                    {% if my_orders_count > 0 %}
+                        <span class="cart-badge">{{ my_orders_count }}</span>
+                    {% endif %}
+                </a>
+
+                {% if is_admin %}
+                    <a href="{{ url_for('admin_dashboard') }}" class="nav__link nav__link--admin">⚙️ Админ</a>
+                    <form action="{{ url_for('admin_logout') }}" method="post" class="logout-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="nav__link logout-btn">🚪 Выйти</button>
+                    </form>
+                {% else %}
+                    <a href="{{ url_for('admin_login') }}" class="nav__link nav__link--admin">⚙️ Вход</a>
+                {% endif %}
+
+                <a href="{{ url_for('cart') }}" class="nav__link cart-link">
+                    🛒 Корзина
+                    {% if cart_count > 0 %}
+                        <span class="cart-badge">{{ cart_count }}</span>
+                    {% endif %}
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container flash-container">
+                {% for category, message in messages %}
+                    <div class="flash flash--{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <main class="main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer__grid">
+                <div>
+                    <h4>🧸 Мир Игрушек</h4>
+                    <p>Лучшие игрушки для ваших детей с 2010 года.</p>
+                </div>
+                <div>
+                    <h4>Разделы</h4>
+                    <a href="{{ url_for('index') }}">Главная</a>
+                    <a href="{{ url_for('catalog') }}">Каталог</a>
+                    <a href="{{ url_for('my_orders') }}">Мои заказы</a>
+                    <a href="{{ url_for('cart') }}">Корзина</a>
+                </div>
+                <div>
+                    <h4>Контакты</h4>
+                    <p>📞 {{ shop_phone }}</p>
+                    <p>✉️ info@mir-igrushek.ru</p>
+                    <p>📍 {{ shop_address }}</p>
+                </div>
+            </div>
+            <div class="footer__bottom">
+                © 2024 Мир Игрушек. Все права защищены.
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
